@@ -1,0 +1,90 @@
+{
+  "name": "cyber-edict-ide",
+  "private": true,
+  "version": "0.2.0",
+  "description": "Cyber-Edict IDE — 三省六部工作流可视化与模型 API 面板（桌面端为本地壳 + 内置前端）",
+  "author": "Cyber-Edict",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git"
+  },
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5173 && cross-env ELECTRON_DEV=1 electron .\"",
+    "electron:start": "electron .",
+    "pack:win": "npm run build && electron-builder --win",
+    "pack:win:dir": "npm run build && electron-builder --win dir",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:report": "vitest run --reporter=verbose --reporter=junit --outputFile.junit=./test-results/junit.xml",
+    "test:coverage": "vitest run --coverage",
+    "test:fail-demo": "vitest run --config vitest.demo-fail.config.ts"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.4.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.0.9",
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.6.3",
+    "vite": "^6.0.7",
+    "vitest": "^3.0.9",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^34.2.0",
+    "electron-builder": "^25.1.8",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.cyberedict.ide",
+    "productName": "Cyber-Edict IDE",
+    "copyright": "Copyright © Cyber-Edict IDE",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "forceCodeSigning": false,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": ["zh_CN", "en_US"],
+      "language": "2052"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.exe"
+    }
+  }
+}

@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Cyber-Edict IDE · iOS-inspired tokens (ROADMAP §7) */
+:root {
+  --font-display: ui-sans-serif, system-ui, -apple-system, 'SF Pro Display', 'PingFang SC', sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, 'SF Pro Text', 'PingFang SC', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --surface-base: #0a0a0f;
+  --surface-raised: #12121a;
+  --surface-overlay: #1a1a24;
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --surface-border-strong: rgba(255, 255, 255, 0.14);
+
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-tertiary: rgba(255, 255, 255, 0.42);
+  --text-accent: #c9a84c;
+
+  --status-running: #007aff;
+  --status-reviewing: #ff9500;
+  --status-completed: #34c759;
+  --status-rejected: #ff3b30;
+  --status-blocked: #af52de;
+  --status-idle: #8e8e93;
+
+  --blur-md: blur(20px);
+
+  --navbar-h: 48px;
+  --sidebar-w: 260px;
+  --inspector-w: 300px;
+  --console-h: 220px;
+
+  --radius-sm: 6px;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-right {
+  animation: fadeIn 0.2s ease;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.22s ease;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--surface-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
