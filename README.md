@@ -54,28 +54,6 @@ npm run electron:start
 
 仓库里还有 `启动桌面端.bat`、`桌面端开发.bat`（内容为英文，避免 cmd 在 GBK 下把 UTF-8 批处理读乱）。GPU 闪退时主进程里默认关了硬件加速；要试开 GPU 可设环境变量 `CYBER_EDICT_USE_GPU=1`。第二次双击没窗口、进程秒退，多半是上次 Electron 没杀干净占单实例锁，任务管理器里结束相关进程再开；排查时可设 `CYBER_EDICT_ALLOW_MULTI=1`。项目路径如果加载异常，换到纯英文短路径再 `build` 往往省事。
 
-## 打包（Windows）
-
-```bash
-npm run pack:win
-```
-
-输出在 `release/`：`Cyber-Edict IDE-<version>-win-x64.exe`（安装包）、`Cyber-Edict IDE-<version>-Portable.exe`（便携）、以及 `win-unpacked/`。该目录已在 `.gitignore`，别提交。
-
-只要文件夹、不打安装包：
-
-```bash
-npm run pack:win:dir
-```
-
-没做代码签名的话，SmartScreen 会拦，自己信任即可。真要外发再考虑买证书签。
-
-## 常用命令
-
-`npm run dev` / `build` / `preview` — 同上。  
-`npm run electron:dev`、`electron:start`、`pack:win`、`pack:win:dir` — 见上。  
-`npm test` — Vitest。
-
 ## API 与跨域
 
 直连第三方接口经常被 CORS 挡。换带 CORS 的网关，或在 Vite 里配 `server.proxy` 把本地路径转到真实 API。
