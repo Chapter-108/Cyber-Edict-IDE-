@@ -4,6 +4,19 @@
 
 版本 0.2.0，MIT，见 `LICENSE`。Windows x64 可打 Electron 包。
 
+## 关于
+
+| 项目 | 说明 |
+|------|------|
+| 仓库 | [github.com/Chapter-108/Cyber-Edict-IDE-](https://github.com/Chapter-108/Cyber-Edict-IDE-) |
+| 定位 | 三省六部主题工作流画布 + OpenAI 兼容 API 配置与调用；可选 Electron 桌面壳 |
+| 协议 | MIT |
+
+在 GitHub 仓库页右侧 **About** 里，可把 **Description** 填成一句（例如下面英文，方便搜索），**Website** 留空或填仓库地址；**Topics** 可加：`electron`、`react`、`typescript`、`vite`、`workflow`、`openai`。
+
+> **Suggested description (English, for GitHub About):**  
+> *Visual workflow IDE with a “Three Departments & Six Ministries” themed canvas, OpenAI-compatible LLM settings, and optional Windows Electron build.*
+
 ## 技术
 
 React 18、TypeScript、Vite 6、Tailwind、Zustand（LLM 设置会 `persist` 到 `localStorage`）、`@xyflow/react`。桌面端 Electron 34 + electron-builder。单测 Vitest。
@@ -67,13 +80,3 @@ npm run pack:win:dir
 
 直连第三方接口经常被 CORS 挡。换带 CORS 的网关，或在 Vite 里配 `server.proxy` 把本地路径转到真实 API。
 
-## 其他文件
-
-- `ROADMAP.md` — 后续打算  
-- `CONTRACTS.md` — 约定摘录  
-
-## Git
-
-`node_modules`、`dist`、`release`、`coverage`、`test-results` 已忽略。别把 Key 写进仓库。
-
-推远程按你平时的流程即可；`package.json` 里的 `repository` 换成自己的地址。大体积 exe 可放 Releases 或外链，注意 GitHub 单文件上限。
