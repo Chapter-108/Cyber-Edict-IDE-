@@ -8,7 +8,8 @@
 
 | 项目 | 说明 |
 |------|------|
-| 仓库 | [github.com/Chapter-108/Cyber-Edict-IDE-](https://github.com/Chapter-108/Cyber-Edict-IDE-) |
+| 仓库 | [Chapter-108/Cyber-Edict-IDE-](https://github.com/Chapter-108/Cyber-Edict-IDE-) |
+| 克隆 | `git clone https://github.com/Chapter-108/Cyber-Edict-IDE-.git` |
 | 定位 | 三省六部主题工作流画布 + OpenAI 兼容 API 配置与调用；可选 Electron 桌面壳 |
 | 协议 | MIT |
 

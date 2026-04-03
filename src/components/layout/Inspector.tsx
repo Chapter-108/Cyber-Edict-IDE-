@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { useWorkflowStore } from '@/store/useWorkflowStore';
 import { useInspectorStore } from '@/store/useInspectorStore';
 import {
@@ -13,11 +13,138 @@ import {
   formatTime,
 } from '@/utils/helpers';
 
-export function Inspector() {
-  const { nodes, selectedNodeId, mode } = useWorkflowStore();
-  const { isEditing, draftSoul, startEditing, discardEdit, commitEdit, updateDraftSoul } = useInspectorStore();
+// ── Static styles ──────────────────────────────────────────────────────────
+const panelStyle: CSSProperties = {
+  width: 'var(--inspector-w)',
+  height: '100%',
+  background: 'var(--surface-raised)',
+  borderLeft: '1px solid var(--surface-border)',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  flexShrink: 0,
+};
 
-  const node = nodes.find((n) => n.id === selectedNodeId);
+const inputStyle: CSSProperties = {
+  background: 'var(--surface-overlay)',
+  border: '1px solid var(--surface-border-strong)',
+  borderRadius: 'var(--radius-sm)',
+  padding: '4px 8px',
+  color: 'var(--text-primary)',
+  fontSize: 12,
+  fontFamily: 'var(--font-mono)',
+  width: '100%',
+  outline: 'none',
+};
+
+const btnPrimary: CSSProperties = {
+  flex: 1,
+  padding: '7px 0',
+  borderRadius: 'var(--radius-sm)',
+  background: '#007AFF',
+  border: 'none',
+  color: '#fff',
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: 'pointer',
+};
+
+const btnSecondary: CSSProperties = {
+  flex: 1,
+  padding: '7px 0',
+  borderRadius: 'var(--radius-sm)',
+  background: 'var(--surface-overlay)',
+  border: '1px solid var(--surface-border)',
+  color: 'var(--text-secondary)',
+  fontSize: 12,
+  cursor: 'pointer',
+};
+
+const bannerStyle: CSSProperties = {
+  padding: '8px 12px',
+  borderBottom: '1px solid var(--surface-border)',
+  background: 'rgba(0,122,255,0.08)',
+  fontSize: 11,
+  lineHeight: 1.55,
+  color: 'var(--text-secondary)',
+};
+
+const headerStyle: CSSProperties = {
+  padding: '14px 16px 12px',
+  borderBottom: '1px solid var(--surface-border)',
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 10,
+};
+
+const labelNameStyle: CSSProperties = {
+  fontFamily: 'var(--font-display)',
+  fontSize: 15,
+  fontWeight: 700,
+  color: 'var(--text-primary)',
+};
+
+const gridStyle: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: 1,
+  borderBottom: '1px solid var(--surface-border)',
+};
+
+const sectionHeaderStyle: CSSProperties = {
+  padding: '10px 14px 6px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+};
+
+const sectionLabelStyle: CSSProperties = {
+  fontSize: 10,
+  fontWeight: 600,
+  letterSpacing: '0.06em',
+  color: 'var(--text-tertiary)',
+  textTransform: 'uppercase',
+};
+
+const sectionActionStyle: CSSProperties = {
+  fontSize: 11,
+  color: 'var(--status-running)',
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  padding: 0,
+};
+
+const skillTagStyle: CSSProperties = {
+  padding: '2px 8px',
+  borderRadius: 4,
+  background: 'rgba(201,168,76,0.1)',
+  border: '1px solid rgba(201,168,76,0.25)',
+  fontSize: 11,
+  color: 'var(--text-accent)',
+  fontFamily: 'var(--font-mono)',
+};
+
+const footerStyle: CSSProperties = {
+  padding: '10px 14px',
+  borderTop: '1px solid var(--surface-border)',
+  display: 'flex',
+  gap: 8,
+};
+
+// ── Components ─────────────────────────────────────────────────────────────
+export function Inspector() {
+  const nodes = useWorkflowStore((s) => s.nodes);
+  const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
+  const mode = useWorkflowStore((s) => s.mode);
+  const isEditing = useInspectorStore((s) => s.isEditing);
+  const draftSoul = useInspectorStore((s) => s.draftSoul);
+  const startEditing = useInspectorStore((s) => s.startEditing);
+  const discardEdit = useInspectorStore((s) => s.discardEdit);
+  const commitEdit = useInspectorStore((s) => s.commitEdit);
+  const updateDraftSoul = useInspectorStore((s) => s.updateDraftSoul);
+
+  const node = useMemo(() => nodes.find((n) => n.id === selectedNodeId), [nodes, selectedNodeId]);
   const data = node?.data;
 
   if (!data) {
@@ -33,42 +160,16 @@ export function Inspector() {
 
   return (
     <aside style={panelStyle} className="animate-slide-right">
-      <div
-        style={{
-          padding: '8px 12px',
-          borderBottom: '1px solid var(--surface-border)',
-          background: 'rgba(0,122,255,0.08)',
-          fontSize: 11,
-          lineHeight: 1.55,
-          color: 'var(--text-secondary)',
-        }}
-      >
+      <div style={bannerStyle}>
         <strong style={{ color: 'var(--status-running)' }}>演示说明</strong>
         ：三省初始为<strong>空闲</strong>；「状态 / Token / 日志摘要」多为本地示例。大模型仅在配置 API 且
         <strong> 测试连接</strong> 或<strong> 下旨并勾选自动调用</strong> 时才会请求网络；进度与错误请看控制台
         <strong>「模型请求」</strong>页。
       </div>
-      <div
-        style={{
-          padding: '14px 16px 12px',
-          borderBottom: '1px solid var(--surface-border)',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 10,
-        }}
-      >
+      <div style={headerStyle}>
         <span style={{ fontSize: 22, lineHeight: 1 }}>{icon}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 15,
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-            }}
-          >
-            {data.label}
-          </div>
+          <div style={labelNameStyle}>{data.label}</div>
           <div style={{ fontSize: 11, color: roleColor(data.role), marginTop: 2 }}>
             {roleLabel(data.role)} · {soul.role}
           </div>
@@ -91,14 +192,7 @@ export function Inspector() {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 1,
-            borderBottom: '1px solid var(--surface-border)',
-          }}
-        >
+        <div style={gridStyle}>
           <Stat label="Tokens" value={data.tokenCount ? formatTokens(data.tokenCount) : '—'} />
           <Stat label="最后活跃" value={data.lastActive ? formatTime(data.lastActive) : '—'} />
         </div>
@@ -172,18 +266,7 @@ export function Inspector() {
         <Section label="技能 · Skills">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
             {soul.skills.map((s) => (
-              <span
-                key={s}
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: 4,
-                  background: 'rgba(201,168,76,0.1)',
-                  border: '1px solid rgba(201,168,76,0.25)',
-                  fontSize: 11,
-                  color: 'var(--text-accent)',
-                  fontFamily: 'var(--font-mono)',
-                }}
-              >
+              <span key={s} style={skillTagStyle}>
                 {s}
               </span>
             ))}
@@ -202,14 +285,7 @@ export function Inspector() {
                 borderBottom: i < soul.rules.length - 1 ? '1px solid var(--surface-border)' : 'none',
               }}
             >
-              <span
-                style={{
-                  color: 'var(--text-accent)',
-                  fontSize: 11,
-                  flexShrink: 0,
-                  marginTop: 1,
-                }}
-              >
+              <span style={{ color: 'var(--text-accent)', fontSize: 11, flexShrink: 0, marginTop: 1 }}>
                 {(i + 1).toString().padStart(2, '0')}
               </span>
               <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{r}</span>
@@ -258,14 +334,7 @@ export function Inspector() {
       </div>
 
       {isEditing ? (
-        <div
-          style={{
-            padding: '10px 14px',
-            borderTop: '1px solid var(--surface-border)',
-            display: 'flex',
-            gap: 8,
-          }}
-        >
+        <div style={footerStyle}>
           <button type="button" onClick={() => commitEdit()} style={btnPrimary}>
             保存配置
           </button>
@@ -314,38 +383,10 @@ function Section({
 }) {
   return (
     <div style={{ borderBottom: '1px solid var(--surface-border)' }}>
-      <div
-        style={{
-          padding: '10px 14px 6px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: '0.06em',
-            color: 'var(--text-tertiary)',
-            textTransform: 'uppercase',
-          }}
-        >
-          {label}
-        </span>
+      <div style={sectionHeaderStyle}>
+        <span style={sectionLabelStyle}>{label}</span>
         {action ? (
-          <button
-            type="button"
-            onClick={action.onClick}
-            style={{
-              fontSize: 11,
-              color: 'var(--status-running)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
+          <button type="button" onClick={action.onClick} style={sectionActionStyle}>
             {action.label}
           </button>
         ) : null}
@@ -397,49 +438,3 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-const panelStyle: CSSProperties = {
-  width: 'var(--inspector-w)',
-  height: '100%',
-  background: 'var(--surface-raised)',
-  borderLeft: '1px solid var(--surface-border)',
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
-  flexShrink: 0,
-};
-
-const inputStyle: CSSProperties = {
-  background: 'var(--surface-overlay)',
-  border: '1px solid var(--surface-border-strong)',
-  borderRadius: 'var(--radius-sm)',
-  padding: '4px 8px',
-  color: 'var(--text-primary)',
-  fontSize: 12,
-  fontFamily: 'var(--font-mono)',
-  width: '100%',
-  outline: 'none',
-};
-
-const btnPrimary: CSSProperties = {
-  flex: 1,
-  padding: '7px 0',
-  borderRadius: 'var(--radius-sm)',
-  background: '#007AFF',
-  border: 'none',
-  color: '#fff',
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: 'pointer',
-};
-
-const btnSecondary: CSSProperties = {
-  flex: 1,
-  padding: '7px 0',
-  borderRadius: 'var(--radius-sm)',
-  background: 'var(--surface-overlay)',
-  border: '1px solid var(--surface-border)',
-  color: 'var(--text-secondary)',
-  fontSize: 12,
-  cursor: 'pointer',
-};

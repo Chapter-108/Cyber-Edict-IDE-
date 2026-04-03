@@ -1,6 +1,105 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useWorkflowStore } from '@/store/useWorkflowStore';
 import { useLlmActivityStore } from '@/store/useLlmActivityStore';
+import { modalOverlay as sharedOverlay } from '@/styles/shared';
+
+// ── Static styles ──────────────────────────────────────────────────────────
+const fabStyle: CSSProperties = {
+  position: 'absolute',
+  bottom: 20,
+  right: 20,
+  zIndex: 20,
+  padding: '10px 18px',
+  borderRadius: 24,
+  background: 'linear-gradient(135deg, #C9A84C, #A8782A)',
+  border: 'none',
+  color: '#fff',
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: 'pointer',
+  boxShadow: '0 4px 20px rgba(201,168,76,0.35)',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 7,
+  fontFamily: 'var(--font-display)',
+  letterSpacing: '0.02em',
+  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+};
+
+const dialogPanelStyle: CSSProperties = {
+  width: 480,
+  maxWidth: 'calc(100vw - 32px)',
+  background: 'var(--surface-overlay)',
+  borderRadius: 16,
+  overflow: 'hidden',
+  boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+};
+
+const dialogHeaderStyle: CSSProperties = {
+  padding: '18px 20px 14px',
+  borderBottom: '1px solid var(--surface-border)',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+};
+
+const presetBtnStyle: CSSProperties = {
+  padding: '4px 10px',
+  borderRadius: 6,
+  border: '1px solid var(--surface-border-strong)',
+  background: 'var(--surface-raised)',
+  color: 'var(--text-secondary)',
+  fontSize: 12,
+  cursor: 'pointer',
+  fontFamily: 'var(--font-display)',
+  transition: 'all 0.12s ease',
+};
+
+const abortBarStyle: CSSProperties = {
+  padding: '10px 12px',
+  borderRadius: 8,
+  background: 'rgba(0,122,255,0.08)',
+  border: '1px solid rgba(0,122,255,0.25)',
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 10,
+};
+
+const spinnerStyle: CSSProperties = {
+  width: 14,
+  height: 14,
+  border: '2px solid rgba(0,122,255,0.3)',
+  borderTop: '2px solid #007AFF',
+  borderRadius: '50%',
+  flexShrink: 0,
+  animation: 'spin 0.8s linear infinite',
+};
+
+const abortBtnStyle: CSSProperties = {
+  padding: '6px 12px',
+  borderRadius: 8,
+  border: '1px solid rgba(255,59,48,0.45)',
+  background: 'rgba(255,59,48,0.1)',
+  color: 'var(--status-rejected)',
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontFamily: 'var(--font-display)',
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
+};
+
+const pendingHintStyle: CSSProperties = {
+  padding: '8px 12px',
+  borderRadius: 8,
+  background: 'rgba(201,168,76,0.08)',
+  border: '1px solid rgba(201,168,76,0.2)',
+  fontSize: 12,
+  color: 'var(--text-secondary)',
+  lineHeight: 1.5,
+};
 
 /**
  * 运行模式：下旨（发布任务）→ 中书规划完成态 → 门下省审议弹窗
@@ -11,7 +110,8 @@ import { useLlmActivityStore } from '@/store/useLlmActivityStore';
  * 3. 弹窗右上角 × 在 submitting 期间变灰并禁用，视觉反馈明确。
  */
 export function DispatchPanel() {
-  const { mode, dispatchTask } = useWorkflowStore();
+  const mode = useWorkflowStore((s) => s.mode);
+  const dispatchTask = useWorkflowStore((s) => s.dispatchTask);
   const llmLoading = useLlmActivityStore((st) => st.status === 'loading');
   const abortInFlightUser = useLlmActivityStore((st) => st.abortInFlightUser);
   const [open, setOpen] = useState(false);
@@ -58,33 +158,22 @@ export function DispatchPanel() {
     }
   };
 
+  const overlayBg: CSSProperties = {
+    ...sharedOverlay,
+    zIndex: 999,
+    background: submitting ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(6px)',
+    transition: 'background 0.2s',
+    padding: 0,
+  };
+
   return (
     <>
       {/* ── 下旨触发按钮 ─────────────────────────────────────────────────── */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        style={{
-          position: 'absolute',
-          bottom: 20,
-          right: 20,
-          zIndex: 20,
-          padding: '10px 18px',
-          borderRadius: 24,
-          background: 'linear-gradient(135deg, #C9A84C, #A8782A)',
-          border: 'none',
-          color: '#fff',
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: 'pointer',
-          boxShadow: '0 4px 20px rgba(201,168,76,0.35)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 7,
-          fontFamily: 'var(--font-display)',
-          letterSpacing: '0.02em',
-          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-        }}
+        style={fabStyle}
         onMouseEnter={(e) => {
           (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
           (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 28px rgba(201,168,76,0.5)';
@@ -103,43 +192,19 @@ export function DispatchPanel() {
         <div
           role="presentation"
           onClick={(e) => {
-            // submitting 期间禁止点击遮罩关闭
             if (e.target === e.currentTarget) tryClose();
           }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 999,
-            background: submitting ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(6px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background 0.2s',
-          }}
+          style={overlayBg}
         >
           <div
             className="animate-fade-in"
             style={{
-              width: 480,
-              maxWidth: 'calc(100vw - 32px)',
-              background: 'var(--surface-overlay)',
+              ...dialogPanelStyle,
               border: `1px solid ${submitting ? 'rgba(0,122,255,0.3)' : 'var(--surface-border-strong)'}`,
-              borderRadius: 16,
-              overflow: 'hidden',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
             }}
           >
             {/* Header */}
-            <div
-              style={{
-                padding: '18px 20px 14px',
-                borderBottom: '1px solid var(--surface-border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-              }}
-            >
+            <div style={dialogHeaderStyle}>
               <span style={{ fontSize: 20 }}>📜</span>
               <div>
                 <div
@@ -180,7 +245,7 @@ export function DispatchPanel() {
               </button>
             </div>
 
-            {/* 旨意模板（submitting 期间隐藏，避免误操作） */}
+            {/* 旨意模板 */}
             {!submitting ? (
               <div style={{ padding: '14px 20px 0' }}>
                 <div
@@ -204,17 +269,7 @@ export function DispatchPanel() {
                         setTitle(p.title);
                         setDesc(p.desc);
                       }}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 6,
-                        border: '1px solid var(--surface-border-strong)',
-                        background: 'var(--surface-raised)',
-                        color: 'var(--text-secondary)',
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-display)',
-                        transition: 'all 0.12s ease',
-                      }}
+                      style={presetBtnStyle}
                     >
                       {p.label}
                     </button>
@@ -327,73 +382,23 @@ export function DispatchPanel() {
                 </button>
               </div>
 
-              {/* ── LLM 调用中止条（submitting + llmLoading 时显示） ─────────── */}
+              {/* ── LLM 调用中止条 ─────────── */}
               {submitting && llmLoading ? (
-                <div
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: 8,
-                    background: 'rgba(0,122,255,0.08)',
-                    border: '1px solid rgba(0,122,255,0.25)',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 10,
-                  }}
-                >
+                <div style={abortBarStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-                    {/* 转圈指示器 */}
-                    <div
-                      style={{
-                        width: 14,
-                        height: 14,
-                        border: '2px solid rgba(0,122,255,0.3)',
-                        borderTop: '2px solid #007AFF',
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        animation: 'spin 0.8s linear infinite',
-                      }}
-                    />
+                    <div style={spinnerStyle} />
                     <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                       中书省模型调用中（最长 60s 自动超时）
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => abortInFlightUser()}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: 8,
-                      border: '1px solid rgba(255,59,48,0.45)',
-                      background: 'rgba(255,59,48,0.1)',
-                      color: 'var(--status-rejected)',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-display)',
-                      flexShrink: 0,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
+                  <button type="button" onClick={() => abortInFlightUser()} style={abortBtnStyle}>
                     立即结束请求
                   </button>
                 </div>
               ) : null}
 
-              {/* submitting 但 LLM 不再 loading（超时或已完成，等待流程推进）时的提示 */}
               {submitting && !llmLoading ? (
-                <div
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 8,
-                    background: 'rgba(201,168,76,0.08)',
-                    border: '1px solid rgba(201,168,76,0.2)',
-                    fontSize: 12,
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.5,
-                  }}
-                >
+                <div style={pendingHintStyle}>
                   正在推进流程，请等待…弹窗将在门下省审议弹窗弹出后自动关闭。
                 </div>
               ) : null}
@@ -402,7 +407,7 @@ export function DispatchPanel() {
         </div>
       ) : null}
 
-      {/* ── 全局 spin keyframe（注入一次） ──────────────────────────────── */}
+      {/* ── 全局 spin keyframe ──────────────────────────────── */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>

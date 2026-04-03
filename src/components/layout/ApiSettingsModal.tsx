@@ -2,14 +2,97 @@ import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 
 import { useLlmSettingsStore } from '@/store/useLlmSettingsStore';
 import { useLlmActivityStore } from '@/store/useLlmActivityStore';
 import { chatCompletion, isLlmConfigured } from '@/utils/llmClient';
+import {
+  modalOverlay as sharedOverlay,
+  modalPanel as sharedPanel,
+  inputStyle as sharedInput,
+  btnPrimary as sharedBtnPrimary,
+  btnDanger as sharedBtnDanger,
+  btnGhost as sharedBtnGhost,
+} from '@/styles/shared';
 
 interface ApiSettingsModalProps {
   open: boolean;
   onClose: () => void;
 }
 
+// ── Local overrides / static styles ────────────────────────────────────────
+const overlayStyle: CSSProperties = { ...sharedOverlay, zIndex: 1100 };
+
+const panelStyle: CSSProperties = {
+  ...sharedPanel,
+  width: 540,
+  height: 'min(720px, 92vh)',
+  maxHeight: '92vh',
+};
+
+const headerStyle: CSSProperties = {
+  flexShrink: 0,
+  padding: '14px 18px 12px',
+  borderBottom: '1px solid var(--surface-border)',
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: 10,
+  background: 'var(--surface-raised)',
+};
+
+const closeBtnStyle: CSSProperties = {
+  flexShrink: 0,
+  background: 'none',
+  border: 'none',
+  color: 'var(--text-tertiary)',
+  fontSize: 22,
+  cursor: 'pointer',
+  lineHeight: 1,
+  padding: '0 4px',
+};
+
+const scrollAreaStyle: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  overflowY: 'auto',
+  overflowX: 'hidden',
+  WebkitOverflowScrolling: 'touch',
+};
+
+const footerStyle: CSSProperties = {
+  flexShrink: 0,
+  borderTop: '1px solid var(--surface-border)',
+  padding: '12px 18px 14px',
+  background: 'var(--surface-raised)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
+};
+
+const sectionLabelRequired: CSSProperties = {
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: '0.1em',
+  color: 'var(--text-accent)',
+  textTransform: 'uppercase',
+};
+
+const sectionLabelAdvanced: CSSProperties = {
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: '0.08em',
+  color: 'var(--text-tertiary)',
+  textTransform: 'uppercase',
+  marginTop: 4,
+};
+
 export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
-  const s = useLlmSettingsStore();
+  const baseUrl = useLlmSettingsStore((s) => s.baseUrl);
+  const apiKey = useLlmSettingsStore((s) => s.apiKey);
+  const model = useLlmSettingsStore((s) => s.model);
+  const temperature = useLlmSettingsStore((s) => s.temperature);
+  const maxTokens = useLlmSettingsStore((s) => s.maxTokens);
+  const completionsPath = useLlmSettingsStore((s) => s.completionsPath);
+  const autoInvokeOnDispatch = useLlmSettingsStore((s) => s.autoInvokeOnDispatch);
+  const setSettings = useLlmSettingsStore((s) => s.setSettings);
+  const resetToDefaults = useLlmSettingsStore((s) => s.resetToDefaults);
+
   const abortInFlightUser = useLlmActivityStore((st) => st.abortInFlightUser);
   const llmLoading = useLlmActivityStore((st) => st.status === 'loading');
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'ok' | 'err'>('idle');
@@ -27,10 +110,10 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
 
   if (!open) return null;
 
-  const missing = !s.baseUrl?.trim() || !s.apiKey?.trim() || !s.model?.trim();
+  const missing = !baseUrl?.trim() || !apiKey?.trim() || !model?.trim();
 
   const runTest = async () => {
-    if (!isLlmConfigured(s)) {
+    if (!isLlmConfigured({ baseUrl, apiKey, model })) {
       setTestStatus('err');
       setTestMsg('请先填写下方「连接配置」中的 Base URL、API Key 与 Model（可向下滚动查看）。');
       scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -40,12 +123,12 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
     setTestMsg('');
     try {
       const reply = await chatCompletion({
-        baseUrl: s.baseUrl.trim(),
-        apiKey: s.apiKey,
-        model: s.model.trim(),
-        temperature: Math.min(s.temperature, 1),
-        maxTokens: Math.min(s.maxTokens, 256),
-        completionsPath: s.completionsPath.trim() || '/chat/completions',
+        baseUrl: baseUrl.trim(),
+        apiKey,
+        model: model.trim(),
+        temperature: Math.min(temperature, 1),
+        maxTokens: Math.min(maxTokens, 256),
+        completionsPath: completionsPath.trim() || '/chat/completions',
         messages: [{ role: 'user', content: 'Reply with exactly: OK' }],
       });
       setTestStatus('ok');
@@ -61,48 +144,16 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="api-modal-title"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1100,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-      }}
+      style={overlayStyle}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         className="animate-fade-in"
-        style={{
-          width: 540,
-          maxWidth: '100%',
-          height: 'min(720px, 92vh)',
-          maxHeight: '92vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          background: 'var(--surface-overlay)',
-          border: '1px solid var(--surface-border-strong)',
-          borderRadius: 16,
-          boxShadow: '0 24px 64px rgba(0,0,0,0.55)',
-        }}
+        style={panelStyle}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 固定页头 */}
-        <div
-          style={{
-            flexShrink: 0,
-            padding: '14px 18px 12px',
-            borderBottom: '1px solid var(--surface-border)',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 10,
-            background: 'var(--surface-raised)',
-          }}
-        >
+        <div style={headerStyle}>
           <span style={{ fontSize: 20 }}>⚡</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
@@ -122,36 +173,13 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
               密钥仅保存在本机浏览器 localStorage，不会上传到 Cyber-Edict 服务器。
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              flexShrink: 0,
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-tertiary)',
-              fontSize: 22,
-              cursor: 'pointer',
-              lineHeight: 1,
-              padding: '0 4px',
-            }}
-            aria-label="关闭"
-          >
+          <button type="button" onClick={onClose} style={closeBtnStyle} aria-label="关闭">
             ×
           </button>
         </div>
 
-        {/* 可滚动表单区：确保 Base URL / Key 始终能滚到 */}
-        <div
-          ref={scrollRef}
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            WebkitOverflowScrolling: 'touch',
-          }}
-        >
+        {/* 可滚动表单区 */}
+        <div ref={scrollRef} style={scrollAreaStyle}>
           <div style={{ padding: '14px 18px 8px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             {missing ? (
               <div
@@ -170,25 +198,15 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
               </div>
             ) : null}
 
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                color: 'var(--text-accent)',
-                textTransform: 'uppercase',
-              }}
-            >
-              连接配置（必填）
-            </div>
+            <div style={sectionLabelRequired}>连接配置（必填）</div>
 
             <Field label="Base URL">
               <input
-                value={s.baseUrl}
-                onChange={(e) => s.setSettings({ baseUrl: e.target.value })}
-                onBlur={(e) => s.setSettings({ baseUrl: e.target.value.trim() })}
+                value={baseUrl}
+                onChange={(e) => setSettings({ baseUrl: e.target.value })}
+                onBlur={(e) => setSettings({ baseUrl: e.target.value.trim() })}
                 placeholder="https://api.openai.com/v1"
-                style={input}
+                style={sharedInput}
                 autoComplete="url"
               />
             </Field>
@@ -196,47 +214,36 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
             <Field label="API Key（Bearer）">
               <input
                 type="password"
-                value={s.apiKey}
-                onChange={(e) => s.setSettings({ apiKey: e.target.value })}
+                value={apiKey}
+                onChange={(e) => setSettings({ apiKey: e.target.value })}
                 placeholder="sk-… 或兼容网关的 Token"
                 autoComplete="off"
-                style={input}
+                style={sharedInput}
               />
             </Field>
 
             <Field label="Model">
               <input
-                value={s.model}
-                onChange={(e) => s.setSettings({ model: e.target.value })}
-                onBlur={(e) => s.setSettings({ model: e.target.value.trim() })}
+                value={model}
+                onChange={(e) => setSettings({ model: e.target.value })}
+                onBlur={(e) => setSettings({ model: e.target.value.trim() })}
                 placeholder="gpt-4o-mini"
-                style={input}
+                style={sharedInput}
               />
             </Field>
 
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                color: 'var(--text-tertiary)',
-                textTransform: 'uppercase',
-                marginTop: 4,
-              }}
-            >
-              高级
-            </div>
+            <div style={sectionLabelAdvanced}>高级</div>
 
             <Field label="Completions 路径">
               <input
-                value={s.completionsPath}
-                onChange={(e) => s.setSettings({ completionsPath: e.target.value })}
+                value={completionsPath}
+                onChange={(e) => setSettings({ completionsPath: e.target.value })}
                 onBlur={(e) => {
                   const v = e.target.value.trim() || '/chat/completions';
-                  s.setSettings({ completionsPath: v });
+                  setSettings({ completionsPath: v });
                 }}
                 placeholder="/chat/completions"
-                style={input}
+                style={sharedInput}
               />
             </Field>
 
@@ -247,9 +254,9 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
                   min={0}
                   max={2}
                   step={0.1}
-                  value={s.temperature}
-                  onChange={(e) => s.setSettings({ temperature: parseFloat(e.target.value) || 0 })}
-                  style={input}
+                  value={temperature}
+                  onChange={(e) => setSettings({ temperature: parseFloat(e.target.value) || 0 })}
+                  style={sharedInput}
                 />
               </Field>
               <Field label="Max tokens">
@@ -258,9 +265,9 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
                   min={64}
                   max={128000}
                   step={256}
-                  value={s.maxTokens}
-                  onChange={(e) => s.setSettings({ maxTokens: parseInt(e.target.value, 10) || 1024 })}
-                  style={input}
+                  value={maxTokens}
+                  onChange={(e) => setSettings({ maxTokens: parseInt(e.target.value, 10) || 1024 })}
+                  style={sharedInput}
                 />
               </Field>
             </div>
@@ -278,8 +285,8 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
             >
               <input
                 type="checkbox"
-                checked={s.autoInvokeOnDispatch}
-                onChange={(e) => s.setSettings({ autoInvokeOnDispatch: e.target.checked })}
+                checked={autoInvokeOnDispatch}
+                onChange={(e) => setSettings({ autoInvokeOnDispatch: e.target.checked })}
                 style={{ marginTop: 3 }}
               />
               <span>
@@ -295,45 +302,26 @@ export function ApiSettingsModal({ open, onClose }: ApiSettingsModalProps) {
           </div>
         </div>
 
-        {/* 固定底栏：操作与测试结果 */}
-        <div
-          style={{
-            flexShrink: 0,
-            borderTop: '1px solid var(--surface-border)',
-            padding: '12px 18px 14px',
-            background: 'var(--surface-raised)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}
-        >
+        {/* 固定底栏 */}
+        <div style={footerStyle}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
             <button
               type="button"
               onClick={runTest}
               disabled={testStatus === 'loading'}
-              style={{
-                ...btnPrimary,
-                opacity: testStatus === 'loading' ? 0.75 : 1,
-              }}
+              style={{ ...sharedBtnPrimary, opacity: testStatus === 'loading' ? 0.75 : 1 }}
             >
               {testStatus === 'loading' ? '请求中…' : '测试连接'}
             </button>
             {testStatus === 'loading' && llmLoading ? (
-              <button
-                type="button"
-                onClick={() => abortInFlightUser()}
-                style={{
-                  ...btnDanger,
-                }}
-              >
+              <button type="button" onClick={() => abortInFlightUser()} style={sharedBtnDanger}>
                 结束测试
               </button>
             ) : null}
-            <button type="button" onClick={() => s.resetToDefaults()} style={btnGhost}>
+            <button type="button" onClick={() => resetToDefaults()} style={sharedBtnGhost}>
               恢复默认
             </button>
-            <button type="button" onClick={onClose} style={btnGhost}>
+            <button type="button" onClick={onClose} style={sharedBtnGhost}>
               完成
             </button>
           </div>
@@ -375,50 +363,3 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     </div>
   );
 }
-
-const input: CSSProperties = {
-  width: '100%',
-  boxSizing: 'border-box',
-  padding: '9px 11px',
-  borderRadius: 8,
-  border: '1px solid var(--surface-border-strong)',
-  background: 'var(--surface-base)',
-  color: 'var(--text-primary)',
-  fontSize: 13,
-  outline: 'none',
-  fontFamily: 'var(--font-mono)',
-};
-
-const btnPrimary: CSSProperties = {
-  padding: '8px 16px',
-  borderRadius: 8,
-  border: 'none',
-  background: '#007AFF',
-  color: '#fff',
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: 'pointer',
-  fontFamily: 'var(--font-display)',
-};
-
-const btnGhost: CSSProperties = {
-  padding: '8px 14px',
-  borderRadius: 8,
-  border: '1px solid var(--surface-border)',
-  background: 'transparent',
-  color: 'var(--text-secondary)',
-  fontSize: 13,
-  cursor: 'pointer',
-};
-
-const btnDanger: CSSProperties = {
-  padding: '8px 14px',
-  borderRadius: 8,
-  border: '1px solid rgba(255,59,48,0.45)',
-  background: 'rgba(255,59,48,0.12)',
-  color: 'var(--status-rejected)',
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: 'pointer',
-  fontFamily: 'var(--font-display)',
-};
